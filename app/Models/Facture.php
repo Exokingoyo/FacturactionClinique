@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Facture extends Model
 {
-    protected $fillable = ['numero', 'patient_nom', 'patient_telephone', 'total', 'user_id'];
+    protected $fillable = ['numero', 'offline_uuid', 'patient_nom', 'patient_telephone', 'total', 'user_id'];
 
     public function lignes()
     {

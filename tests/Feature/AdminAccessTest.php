@@ -39,6 +39,10 @@ class AdminAccessTest extends TestCase
 
         $this->get(route('factures.show', $otherInvoice))->assertForbidden();
         $this->get(route('factures.show', $ownInvoice))->assertOk();
+        $this->get(route('factures.pdf', $ownInvoice))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+        $this->get(route('factures.pdf', $otherInvoice))->assertForbidden();
         $this->get(route('admin.factures.edit', $ownInvoice))->assertForbidden();
     }
 

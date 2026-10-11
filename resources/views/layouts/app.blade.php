@@ -4,6 +4,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <meta name="offline-sync-url" content="{{ route('factures.synchronize') }}">
+        <meta name="offline-user-id" content="{{ auth()->id() }}">
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
@@ -17,6 +19,8 @@
     <body class="font-sans antialiased">
         <div class="min-h-screen">
             @include('layouts.navigation')
+            <div id="offline-sync-status" class="clinic-alert" role="status" aria-live="polite" hidden></div>
+            
 
             <main id="main-content">
                 @isset($header)

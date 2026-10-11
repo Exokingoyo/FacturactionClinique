@@ -1,4 +1,5 @@
 <x-app-layout>
+    
     <section class="clinic-page clinic-page--narrow">
         <div class="clinic-page__heading">
             <div>
@@ -12,7 +13,7 @@
             <div class="clinic-alert clinic-alert--error" role="alert">{{ $errors->first() }}</div>
         @endif
 
-        <form method="POST" action="{{ route('factures.store') }}" class="clinic-card clinic-card__body">
+        <form method="POST" action="{{ route('factures.store') }}" class="clinic-card clinic-card__body" data-offline-invoice data-sync-url="{{ route('factures.synchronize') }}" data-user-id="{{ auth()->id() }}" data-catalog-proof="{{ $catalogProof }}">
             @csrf
             <div class="clinic-form-grid" style="margin-bottom:28px">
                 <div>
@@ -55,6 +56,7 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
             </div>
+            <div class="clinic-alert clinic-alert--error" data-offline-form-status role="status" aria-live="polite" hidden></div>
         </form>
     </section>
 

@@ -1,59 +1,95 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Facturation Clinique
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Application Laravel de gestion des services et des factures de la clinique.
 
-## About Laravel
+## Utiliser une base commune pour tous les utilisateurs
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+L'application enregistre déjà les utilisateurs, les services et les factures dans
+la base configurée par Laravel. Il n'y a pas de synchronisation manuelle à lancer :
+chaque modification est enregistrée immédiatement. Pour que tous les utilisateurs
+retrouvent les mêmes données, ils doivent utiliser la même instance de
+l'application, connectée à une base centrale.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Configuration recommandée
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. Créer une base MySQL ou MariaDB chez l'hébergeur de l'application.
+2. Déployer l'application Laravel sur un serveur accessible aux utilisateurs.
+   Les utilisateurs se connectent à son adresse web depuis leur navigateur ;
+   ils ne se connectent pas directement au serveur MySQL.
+3. Configurer le fichier `.env` du serveur avec les identifiants de la base :
 
-## Learning Laravel
+   ```dotenv
+   DB_CONNECTION=mysql
+   DB_HOST=adresse-de-la-base
+   DB_PORT=3306
+   DB_DATABASE=nom_de_la_base
+   DB_USERNAME=utilisateur
+   DB_PASSWORD=mot_de_passe
+   ```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+   Remplacer les valeurs d'exemple par celles de l'hébergeur. Ne pas committer
+   ni partager le fichier `.env`.
+4. Depuis le dossier de l'application, exécuter les migrations :
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+   ```bash
+   php artisan optimize:clear
+   php artisan migrate --force
+   ```
 
-## Laravel Sponsors
+   Ne pas utiliser `migrate:fresh` sur une base contenant des données : cette
+   commande supprimerait les tables et leurs données.
+5. Faire accéder tous les utilisateurs à la même adresse web de l'application.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Si plusieurs serveurs applicatifs sont nécessaires, ils doivent tous utiliser
+les mêmes paramètres de base de données et la même `APP_KEY`. En revanche, pour
+un déploiement simple avec un seul serveur Laravel, les utilisateurs partagent
+déjà les données en utilisant cette seule instance.
 
-### Premium Partners
+### Données déjà présentes dans SQLite
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Passer de SQLite à MySQL ne copie pas les données existantes. La migration crée
+la structure des tables dans la nouvelle base, mais les anciennes factures,
+services et comptes restent dans le fichier SQLite d'origine. Si cette base
+contient des données à conserver, il faut les exporter puis les importer dans
+MySQL avant de faire utiliser la nouvelle instance à tous les utilisateurs.
 
-## Contributing
+### Visibilité des factures
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Le partage de la base ne change pas les droits de consultation : un utilisateur
+voit ses propres factures, tandis qu'un administrateur peut consulter toutes les
+factures. Les comptes et les services sont partagés par l'ensemble de
+l'application.
 
-## Code of Conduct
+### Créer des factures sans Internet
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Après avoir ouvert le formulaire de nouvelle facture en étant connecté et en
+ligne, l'utilisateur peut le laisser ouvert et créer des factures même si
+Internet est ensuite interrompu. Le catalogue des prestations est celui chargé
+lors de cette visite. Il faut garder le formulaire ouvert : l'application ne
+peut pas être lancée dans une nouvelle fenêtre sans connexion.
+Les factures non envoyées sont conservées dans le stockage local du navigateur
+sur cet appareil, puis envoyées automatiquement lorsque la connexion revient
+dans la page ouverte ou lorsque l'utilisateur revient dans l'application avec
+le même compte. Les identifiants
+uniques empêchent de créer un doublon si la réponse du serveur est perdue.
 
-## Security Vulnerabilities
+Cette fonction nécessite un navigateur moderne et une adresse HTTPS en
+production. Elle ne permet pas de modifier les factures existantes hors ligne.
+Les factures en attente ne sont pas partagées avec les autres appareils avant
+leur synchronisation. Comme elles contiennent des renseignements de patients,
+protégez l'accès à l'ordinateur et au profil du navigateur ; ne partagez pas un
+profil de navigateur entre utilisateurs.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Développement local
 
-## License
+La configuration SQLite de `.env.example` reste adaptée au développement local.
+Pour préparer une installation locale :
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```powershell
+composer install
+Copy-Item .env.example .env
+php artisan key:generate
+php artisan migrate
+npm install
+npm run build
+```

@@ -27,6 +27,7 @@ Route::middleware(['auth', 'active', 'verified'])->group(function () {
     Route::get('/factures', [FactureController::class, 'index'])->name('factures.index');
     Route::get('/factures/create', [FactureController::class, 'create'])->name('factures.create');
     Route::post('/factures', [FactureController::class, 'store'])->name('factures.store');
+    Route::post('/factures/synchroniser', [FactureController::class, 'synchronizeOffline'])->name('factures.synchronize');
     Route::get('/factures/{facture}', [FactureController::class, 'show'])->name('factures.show');
     Route::get('/factures/{facture}/pdf', [FactureController::class, 'pdf'])->name('factures.pdf');
 
