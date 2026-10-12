@@ -14,10 +14,32 @@ use Illuminate\View\View;
 
 class UserController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'sort' => ['nullable', Rule::in(['name', 'email', 'role', 'is_active', 'created_at'])],
+            'direction' => ['nullable', Rule::in(['asc', 'desc'])],
+        ]);
+        $search = trim($filters['search'] ?? '');
+        $sort = $filters['sort'] ?? 'name';
+        $direction = $filters['direction'] ?? 'asc';
+
         return view('admin.users.index', [
-            'users' => User::orderBy('name')->paginate(20),
+            'users' => User::query()
+                ->when($search !== '', function ($query) use ($search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('role', 'like', "%{$search}%");
+                    });
+                })
+                ->orderBy($sort, $direction)
+                ->paginate(20)
+                ->withQueryString(),
+            'filters' => $filters,
+            'sort' => $sort,
+            'direction' => $direction,
         ]);
     }
 

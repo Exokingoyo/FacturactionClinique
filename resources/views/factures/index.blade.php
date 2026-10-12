@@ -53,6 +53,32 @@
         </div>
 
         <div class="clinic-card clinic-table-wrap">
+            <form method="GET" action="{{ route('factures.index') }}" class="flex flex-wrap items-end gap-3" style="padding:16px">
+                <div style="flex:1 1 220px">
+                    <label class="clinic-label" for="invoice-search">Rechercher</label>
+                    <input id="invoice-search" class="clinic-field" type="search" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="N° de facture, patient ou auteur">
+                </div>
+                <div style="flex:0 1 190px">
+                    <label class="clinic-label" for="invoice-sort">Trier par</label>
+                    <select id="invoice-sort" class="clinic-field" name="sort">
+                        <option value="created_at" @selected($sort === 'created_at')>Date</option>
+                        <option value="numero" @selected($sort === 'numero')>N° facture</option>
+                        <option value="patient_nom" @selected($sort === 'patient_nom')>Patient</option>
+                        <option value="total" @selected($sort === 'total')>Total</option>
+                    </select>
+                </div>
+                <div style="flex:0 1 150px">
+                    <label class="clinic-label" for="invoice-direction">Ordre</label>
+                    <select id="invoice-direction" class="clinic-field" name="direction">
+                        <option value="desc" @selected($direction === 'desc')>Décroissant</option>
+                        <option value="asc" @selected($direction === 'asc')>Croissant</option>
+                    </select>
+                </div>
+                <button class="clinic-button" type="submit">Appliquer</button>
+                @if (($filters['search'] ?? '') !== '')
+                    <a class="clinic-button clinic-button--secondary" href="{{ route('factures.index', ['sort' => $sort, 'direction' => $direction]) }}">Effacer</a>
+                @endif
+            </form>
             <table class="clinic-table">
                 <thead>
                     <tr>
@@ -75,7 +101,9 @@
                             <td><a class="clinic-link" href="{{ route('factures.show', $f) }}">Détails <span aria-hidden="true">→</span></a></td>
                         </tr>
                     @empty
-                        <tr><td class="clinic-empty" colspan="6">Aucune facture enregistrée. Créez votre première facture pour la retrouver ici.</td></tr>
+                        <tr><td class="clinic-empty" colspan="6">
+                            {{ ($filters['search'] ?? '') !== '' ? 'Aucune facture ne correspond à cette recherche.' : 'Aucune facture enregistrée. Créez votre première facture pour la retrouver ici.' }}
+                        </td></tr>
                     @endforelse
                 </tbody>
             </table>

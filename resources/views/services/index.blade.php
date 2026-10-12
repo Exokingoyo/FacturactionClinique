@@ -36,8 +36,33 @@
         <section class="clinic-card clinic-card__body" aria-labelledby="service-list-title">
             <div class="flex items-center justify-between gap-3" style="margin-bottom:8px">
                 <h2 id="service-list-title" class="text-lg font-bold" style="margin:0">Services enregistrés</h2>
-                <span class="text-sm text-gray-500">{{ $services->count() }} service(s)</span>
+                <span class="text-sm text-gray-500">{{ $services->total() }} service(s)</span>
             </div>
+
+            <form method="GET" action="{{ route('admin.services.index') }}" class="flex flex-wrap items-end gap-3" style="margin:16px 0">
+                <div style="flex:1 1 220px">
+                    <label class="clinic-label" for="service-search">Rechercher un service</label>
+                    <input id="service-search" class="clinic-field" type="search" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Nom du service">
+                </div>
+                <div style="flex:0 1 190px">
+                    <label class="clinic-label" for="service-sort">Trier par</label>
+                    <select id="service-sort" class="clinic-field" name="sort">
+                        <option value="nom" @selected($sort === 'nom')>Nom</option>
+                        <option value="prix" @selected($sort === 'prix')>Tarif</option>
+                    </select>
+                </div>
+                <div style="flex:0 1 150px">
+                    <label class="clinic-label" for="service-direction">Ordre</label>
+                    <select id="service-direction" class="clinic-field" name="direction">
+                        <option value="asc" @selected($direction === 'asc')>Croissant</option>
+                        <option value="desc" @selected($direction === 'desc')>Décroissant</option>
+                    </select>
+                </div>
+                <button class="clinic-button" type="submit">Appliquer</button>
+                @if (($filters['search'] ?? '') !== '')
+                    <a class="clinic-button clinic-button--secondary" href="{{ route('admin.services.index', ['sort' => $sort, 'direction' => $direction]) }}">Effacer</a>
+                @endif
+            </form>
 
             @forelse ($services as $s)
                 <div class="clinic-service-row">
@@ -57,8 +82,11 @@
                     </form>
                 </div>
             @empty
-                <p class="clinic-empty">Aucun service pour le moment. Ajoutez-en un ci-dessus pour commencer.</p>
+                <p class="clinic-empty">
+                    {{ ($filters['search'] ?? '') !== '' ? 'Aucun service ne correspond à cette recherche.' : 'Aucun service pour le moment. Ajoutez-en un ci-dessus pour commencer.' }}
+                </p>
             @endforelse
+            <div class="clinic-pagination">{{ $services->links() }}</div>
         </section>
     </section>
 </x-app-layout>

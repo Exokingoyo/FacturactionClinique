@@ -368,22 +368,38 @@ function printOfflineInvoice(invoice, clinic) {
         throw new Error('Les détails de cette facture ne sont pas disponibles pour l’impression hors ligne.');
     }
 
-    const printWindow = window.open('', '_blank');
+    const date = escapeHtml(formatDate(invoice.created_at));
+    const paperHeight = 260 + invoice.local_lines.reduce((height, line) => (
+        height + 46 + Math.max(0, Math.ceil(Array.from(line.designation).length / 24) - 1) * 12
+    ), 0);
+    const paperHeightMm = (paperHeight * 25.4 / 72).toFixed(2);
+    const printFrame = document.createElement('iframe');
+    printFrame.setAttribute('aria-hidden', 'true');
+    printFrame.title = 'Impression de la facture hors ligne';
+    printFrame.style.position = 'fixed';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = '0';
+    printFrame.style.right = '0';
+    printFrame.style.bottom = '0';
+    document.body.append(printFrame);
 
-    if (!printWindow) {
-        throw new Error('Autorisez les fenêtres contextuelles pour imprimer la facture.');
+    const printWindow = printFrame.contentWindow;
+    const printDocument = printFrame.contentDocument;
+
+    if (!printWindow || !printDocument) {
+        printFrame.remove();
+        throw new Error('La fenêtre d’impression n’est pas disponible.');
     }
 
-    const date = escapeHtml(formatDate(invoice.created_at));
-
-    printWindow.document.open();
-    printWindow.document.write(`<!doctype html>
+    printDocument.open();
+    printDocument.write(`<!doctype html>
         <html lang="fr">
         <head>
             <meta charset="utf-8">
             <title>Facture hors ligne - ${escapeHtml(invoice.patient_nom)}</title>
             <style>
-                @page { size: 80mm auto; margin: 4mm; }
+                @page { size: 80mm ${paperHeightMm}mm; margin: 4mm; }
                 body { max-width: 72mm; margin: 0 auto; color: #252525; font: 10px/1.4 monospace; }
                 h1 { margin: 0 0 8px; font: normal 18px Arial, sans-serif; text-align: center; }
                 .clinic, .patient, .thanks { text-align: center; }
@@ -399,7 +415,7 @@ function printOfflineInvoice(invoice, clinic) {
                 .issued-by { margin-top: 10px; text-align: center; font-size: 9px; }
             </style>
         </head>
-        <body onload="window.print()">
+        <body>
             <h1>REÇU</h1>
             <div class="clinic"><strong>${escapeHtml(clinic.clinicName)}</strong><br>${escapeHtml(clinic.clinicAddress)}</div>
             <div class="separator"></div>
@@ -421,5 +437,8 @@ function printOfflineInvoice(invoice, clinic) {
             <div class="issued-by">${escapeHtml(clinic.clinicName)}</div>
         </body>
         </html>`);
-    printWindow.document.close();
+    printDocument.close();
+    printWindow.addEventListener('afterprint', () => printFrame.remove(), { once: true });
+    printWindow.focus();
+    printWindow.print();
 }

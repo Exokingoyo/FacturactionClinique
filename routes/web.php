@@ -29,6 +29,7 @@ Route::middleware(['auth', 'active', 'verified'])->group(function () {
     Route::post('/factures', [FactureController::class, 'store'])->name('factures.store');
     Route::post('/factures/synchroniser', [FactureController::class, 'synchronizeOffline'])->name('factures.synchronize');
     Route::get('/factures/{facture}', [FactureController::class, 'show'])->name('factures.show');
+    Route::get('/factures/{facture}/imprimer', [FactureController::class, 'print'])->name('factures.print');
     Route::get('/factures/{facture}/pdf', [FactureController::class, 'pdf'])->name('factures.pdf');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

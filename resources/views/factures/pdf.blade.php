@@ -3,10 +3,10 @@
 <head>
     <meta charset="utf-8">
     <style>
-        @page { margin: 16px 14px; }
+        @page { margin: 4mm; }
         body {
             color: #252525;
-            font-family: DejaVu Sans Mono, monospace;
+            font-family: DejaVu Sans, sans-serif;
             font-size: 9px;
             line-height: 1.35;
         }
@@ -26,11 +26,11 @@
             height: 0;
         }
         .meta { margin: 2px 0; }
-        .line { margin: 7px 0; }
-        .line-heading { width: 100%; }
+        .line-heading, .total { width: 100%; table-layout: fixed; border-collapse: collapse; }
+        .line-heading td:first-child { width: 68%; overflow-wrap: break-word; }
+        .line-heading td:last-child { width: 32%; }
         .line-amount { text-align: right; white-space: nowrap; }
-        .line-detail { color: #444; }
-        .total { width: 100%; margin-top: 8px; font-weight: bold; }
+        .total { margin-top: 8px; font-weight: bold; }
         .total-label { text-align: left; }
         .total-amount { text-align: right; white-space: nowrap; }
         .thanks {
@@ -60,13 +60,12 @@
         <div class="separator"></div>
 
         @foreach ($facture->lignes as $ligne)
-                <table class="line-heading">
-                    <tr>
-                        <td>{{ $ligne->designation }}</td>
-                        <td class="line-amount">{{ number_format($ligne->prix * $ligne->quantite, 2) }} {{ config('clinique.devise') }}</td>
-                    </tr>
-                </table>
-                <!-- <div class="line-detail">{{ $ligne->quantite }} x {{ number_format($ligne->prix, 2) }} {{ config('clinique.devise') }}</div> -->
+            <table class="line-heading">
+                <tr>
+                    <td>{{ $ligne->designation }}</td>
+                    <td class="line-amount">{{ number_format($ligne->prix * $ligne->quantite, 2) }} {{ config('clinique.devise') }}</td>
+                </tr>
+            </table>
         @endforeach
 
         <div class="separator"></div>

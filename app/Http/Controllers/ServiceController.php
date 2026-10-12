@@ -4,12 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Models\Service;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ServiceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view('services.index', ['services' => Service::orderBy('nom')->get()]);
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'sort' => ['nullable', Rule::in(['nom', 'prix'])],
+            'direction' => ['nullable', Rule::in(['asc', 'desc'])],
+        ]);
+        $search = trim($filters['search'] ?? '');
+        $sort = $filters['sort'] ?? 'nom';
+        $direction = $filters['direction'] ?? 'asc';
+
+        $services = Service::query()
+            ->when($search !== '', fn ($query) => $query->where('nom', 'like', "%{$search}%"))
+            ->orderBy($sort, $direction)
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('services.index', compact('services', 'filters', 'sort', 'direction'));
     }
 
     public function store(Request $request)

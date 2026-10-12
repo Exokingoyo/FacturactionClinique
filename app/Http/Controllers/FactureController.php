@@ -16,14 +16,32 @@ use JsonException;
 
 class FactureController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $factures = Facture::with('user')
-            ->when(! request()->user()->isAdmin(), fn ($query) => $query->where('user_id', request()->user()->id))
-            ->latest()
-            ->paginate(10);
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'sort' => ['nullable', Rule::in(['numero', 'patient_nom', 'total', 'created_at'])],
+            'direction' => ['nullable', Rule::in(['asc', 'desc'])],
+        ]);
+        $search = trim($filters['search'] ?? '');
+        $sort = $filters['sort'] ?? 'created_at';
+        $direction = $filters['direction'] ?? 'desc';
 
-        return view('factures.index', compact('factures'));
+        $factures = Facture::query()
+            ->with('user')
+            ->when(! request()->user()->isAdmin(), fn ($query) => $query->where('user_id', request()->user()->id))
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('numero', 'like', "%{$search}%")
+                        ->orWhere('patient_nom', 'like', "%{$search}%")
+                        ->orWhereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->orderBy($sort, $direction)
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('factures.index', compact('factures', 'filters', 'sort', 'direction'));
     }
 
     public function create()
@@ -185,16 +203,22 @@ class FactureController extends Controller
         return view('factures.show', compact('facture'));
     }
 
+    public function print(Facture $facture)
+    {
+        $this->authorizeView($facture);
+        $facture->load('lignes', 'user');
+        $paperHeightMm = $this->receiptHeight($facture) * 25.4 / 72;
+
+        return view('factures.print', compact('facture', 'paperHeightMm'));
+    }
+
     public function pdf(Facture $facture)
     {
         $this->authorizeView($facture);
         $facture->load('lignes', 'user');
-        $paperHeight = 260 + $facture->lignes->sum(
-            fn (FactureLigne $ligne) => 46 + max(0, ceil(mb_strlen($ligne->designation) / 24) - 1) * 12
-        );
 
         return Pdf::loadView('factures.pdf', compact('facture'))
-            ->setPaper([0, 0, 226.77, $paperHeight])
+            ->setPaper([0, 0, 226.77, $this->receiptHeight($facture)])
             ->stream($facture->numero.'.pdf');
     }
 
@@ -260,6 +284,13 @@ class FactureController extends Controller
         abort_unless(
             request()->user()->isAdmin() || $facture->user_id === request()->user()->id,
             403
+        );
+    }
+
+    private function receiptHeight(Facture $facture): float
+    {
+        return 260 + $facture->lignes->sum(
+            fn (FactureLigne $ligne) => 46 + max(0, ceil(mb_strlen($ligne->designation) / 24) - 1) * 12
         );
     }
 }

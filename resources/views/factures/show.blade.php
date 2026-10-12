@@ -54,10 +54,15 @@
 
             <div class="flex flex-wrap items-center justify-between gap-4" style="margin-top:24px">
                 <p class="clinic-total" style="margin:0">Total à payer : <strong>{{ number_format($facture->total, 2) }} {{ config('clinique.devise') }}</strong></p>
-                <a href="{{ route('factures.pdf', $facture) }}" target="_blank" rel="noopener" class="clinic-button">
+                <div class="clinic-heading-actions">
+                    <a href="{{ route('factures.pdf', $facture) }}" class="clinic-button clinic-button--secondary" download="{{ $facture->numero }}.pdf">
+                        Télécharger le PDF
+                    </a>
+                    <a href="{{ route('factures.print', $facture) }}" class="clinic-button">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M7 14h10v7H7z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Imprimer / PDF
-                </a>
+                    Imprimer
+                    </a>
+                </div>
             </div>
         </article>
     </section>

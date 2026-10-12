@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Facture;
 use App\Models\FactureLigne;
+use App\Models\Service;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -39,6 +40,10 @@ class AdminAccessTest extends TestCase
 
         $this->get(route('factures.show', $otherInvoice))->assertForbidden();
         $this->get(route('factures.show', $ownInvoice))->assertOk();
+        $this->get(route('factures.print', $ownInvoice))
+            ->assertOk()
+            ->assertSee('data-print', false);
+        $this->get(route('factures.print', $otherInvoice))->assertForbidden();
         $this->get(route('factures.pdf', $ownInvoice))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
@@ -202,6 +207,70 @@ class AdminAccessTest extends TestCase
             ->assertExitCode(0);
 
         $this->assertTrue($user->fresh()->isAdmin());
+    }
+
+    public function test_invoice_search_and_sort_filters_results_and_preserves_visibility(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $staff = User::factory()->create();
+        $alpha = $this->createInvoice($staff, 'Alpha Patient');
+        $alpha->update(['total' => 50]);
+        $zulu = $this->createInvoice($staff, 'Zulu Patient');
+        $zulu->update(['total' => 200]);
+        $this->createInvoice(User::factory()->create(), 'Alpha Private');
+
+        $this->actingAs($admin)
+            ->get(route('factures.index', ['search' => 'Alpha Private']))
+            ->assertOk()
+            ->assertSeeText('Alpha Private')
+            ->assertDontSeeText('Alpha Patient');
+
+        $response = $this->get(route('factures.index', ['sort' => 'total', 'direction' => 'asc']));
+        $response->assertOk();
+        $this->assertLessThan(
+            strpos($response->getContent(), 'Zulu Patient'),
+            strpos($response->getContent(), 'Alpha Patient')
+        );
+
+        $this->actingAs($staff)
+            ->get(route('factures.index', ['search' => 'Alpha']))
+            ->assertOk()
+            ->assertDontSeeText('Alpha Private');
+    }
+
+    public function test_services_and_users_can_be_searched_and_sorted(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $alphaService = Service::create(['nom' => 'Alpha Service', 'prix' => 10]);
+        $zuluService = Service::create(['nom' => 'Zulu Service', 'prix' => 50]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.services.index', ['search' => 'Alpha']))
+            ->assertOk()
+            ->assertSee('value="Alpha Service"', false)
+            ->assertDontSee('value="Zulu Service"', false);
+
+        $response = $this->get(route('admin.services.index', ['sort' => 'prix', 'direction' => 'asc']));
+        $response->assertOk();
+        $this->assertLessThan(
+            strpos($response->getContent(), 'id="service-name-'.$zuluService->id.'"'),
+            strpos($response->getContent(), 'id="service-name-'.$alphaService->id.'"')
+        );
+
+        User::factory()->create(['name' => 'Z Staff', 'email' => 'z-staff@example.com']);
+        User::factory()->create(['name' => 'A Staff', 'email' => 'a-staff@example.com']);
+
+        $this->get(route('admin.users.index', ['search' => 'Z Staff']))
+            ->assertOk()
+            ->assertSeeText('Z Staff')
+            ->assertDontSeeText('A Staff');
+
+        $response = $this->get(route('admin.users.index', ['sort' => 'email', 'direction' => 'asc']));
+        $response->assertOk();
+        $this->assertLessThan(
+            strpos($response->getContent(), 'Z Staff'),
+            strpos($response->getContent(), 'A Staff')
+        );
     }
 
     private function createInvoice(User $user, string $patientName): Facture

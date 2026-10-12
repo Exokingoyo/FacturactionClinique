@@ -17,6 +17,33 @@
         @endif
 
         <div class="clinic-card clinic-table-wrap">
+            <form method="GET" action="{{ route('admin.users.index') }}" class="flex flex-wrap items-end gap-3" style="padding:16px">
+                <div style="flex:1 1 220px">
+                    <label class="clinic-label" for="user-search">Rechercher</label>
+                    <input id="user-search" class="clinic-field" type="search" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Nom, adresse e-mail ou rôle">
+                </div>
+                <div style="flex:0 1 190px">
+                    <label class="clinic-label" for="user-sort">Trier par</label>
+                    <select id="user-sort" class="clinic-field" name="sort">
+                        <option value="name" @selected($sort === 'name')>Nom</option>
+                        <option value="email" @selected($sort === 'email')>Adresse e-mail</option>
+                        <option value="role" @selected($sort === 'role')>Rôle</option>
+                        <option value="is_active" @selected($sort === 'is_active')>État</option>
+                        <option value="created_at" @selected($sort === 'created_at')>Date de création</option>
+                    </select>
+                </div>
+                <div style="flex:0 1 150px">
+                    <label class="clinic-label" for="user-direction">Ordre</label>
+                    <select id="user-direction" class="clinic-field" name="direction">
+                        <option value="asc" @selected($direction === 'asc')>Croissant</option>
+                        <option value="desc" @selected($direction === 'desc')>Décroissant</option>
+                    </select>
+                </div>
+                <button class="clinic-button" type="submit">Appliquer</button>
+                @if (($filters['search'] ?? '') !== '')
+                    <a class="clinic-button clinic-button--secondary" href="{{ route('admin.users.index', ['sort' => $sort, 'direction' => $direction]) }}">Effacer</a>
+                @endif
+            </form>
             <table class="clinic-table">
                 <thead>
                     <tr><th scope="col">Nom</th><th scope="col">Adresse e-mail</th><th scope="col">Rôle</th><th scope="col">État</th><th scope="col">Créé le</th><th scope="col">Actions</th></tr>
@@ -47,7 +74,9 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td class="clinic-empty" colspan="6">Aucun compte utilisateur.</td></tr>
+                        <tr><td class="clinic-empty" colspan="6">
+                            {{ ($filters['search'] ?? '') !== '' ? 'Aucun compte ne correspond à cette recherche.' : 'Aucun compte utilisateur.' }}
+                        </td></tr>
                     @endforelse
                 </tbody>
             </table>

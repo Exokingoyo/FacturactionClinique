@@ -80,6 +80,15 @@ leur synchronisation. Comme elles contiennent des renseignements de patients,
 protégez l'accès à l'ordinateur et au profil du navigateur ; ne partagez pas un
 profil de navigateur entre utilisateurs.
 
+### Impression des reçus
+
+Les reçus sont prévus pour une largeur thermique de 80 mm. La page
+d'impression ouvre la boîte de dialogue du système sans fenêtre contextuelle ;
+le PDF peut aussi être téléchargé séparément. L'impression des factures en
+attente fonctionne également hors ligne et utilise la même largeur de papier.
+Dans un emballage Electron, configurez l'imprimante avec un papier de 80 mm et
+laissez l'application autoriser l'impression Chromium (`window.print()`).
+
 ## Développement local
 
 La configuration SQLite de `.env.example` reste adaptée au développement local.
